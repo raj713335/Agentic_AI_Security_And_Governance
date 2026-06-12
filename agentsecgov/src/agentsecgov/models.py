@@ -40,3 +40,15 @@ class ToolCall(BaseModel):
     tool_name: str = Field(description="name of the tool being called")
     arguments: dict[str, Any] = Field(description="arguments for the tool call")
     risk: RiskLevel = Field(description="risk level of this tool call")
+
+
+class Principal(BaseModel):
+    user_id: str
+    tenant_id: str
+    role: str
+    scopes: set[str]
+    department: str = "support"
+    environment: str = "local"
+
+    def has_scope(self, scope: str) -> bool:
+        return scope in self.scopes

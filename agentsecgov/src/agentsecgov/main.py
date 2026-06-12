@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 
-from .models import AgentRequest, AgentResponse
+from .models import AgentRequest, AgentResponse, Principal
 from .agent import DeterministicAgent
+from .auth import get_current_principal
 
 app = FastAPI(
     title="AgentSecGov API",
@@ -18,8 +19,8 @@ async def health_check():
 
 
 @app.post("/agent/run", response_model=AgentResponse)
-async def run_agent(request: AgentRequest) -> AgentResponse:
+async def run_agent(request: AgentRequest, principal: Principal = Depends(get_current_principal)) -> AgentResponse:
     # In a real implementation, you would have logic here to process the request
     # and generate a response based on the agent's capabilities and the input message.
 
-    return AGENT.run(request)
+    return AGENT.run(request, principal)

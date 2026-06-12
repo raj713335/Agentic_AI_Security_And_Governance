@@ -1,5 +1,5 @@
 from uuid import uuid4
-from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall
+from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal
 
 
 class DeterministicPlanner:
@@ -56,7 +56,7 @@ class DeterministicAgent:
     A simple deterministic agent that processes incoming requests and generates responses.
     """
 
-    def run(self, request: AgentRequest) -> AgentResponse:
+    def run(self, request: AgentRequest, principal: Principal) -> AgentResponse:
         """
         Process the incoming request and generate a response.
 

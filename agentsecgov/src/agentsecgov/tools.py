@@ -1,4 +1,5 @@
-from .models import RiskLevel, ToolSpec
+from .models import RiskLevel, ToolSpec, ToolCall
+from .sandbox import sandbox_precheck
 
 TOOL_SPECS: dict[str, ToolSpec] = {
     "search_public_docs": ToolSpec(
@@ -45,3 +46,35 @@ TOOL_SPECS: dict[str, ToolSpec] = {
 
 def get_tool_spec(tool_name: str) -> ToolSpec | None:
     return TOOL_SPECS.get(tool_name)
+
+
+def execute_tool(tool_call: ToolCall) -> dict:
+    sandbox_precheck(tool_call.name, tool_call.arguments)
+
+    if tool_call.name == "search_public_docs":
+        return {
+            "status": "searched",
+            "answer": "Password reset guidance found in public support docs.",
+        }
+
+    if tool_call.name == "create_ticket":
+        return {
+            "status": "created",
+            "ticket_id": "TCK-1001",
+            **tool_call.arguments,
+        }
+
+    if tool_call.name == "send_customer_email":
+        return {
+            "status": "sent",
+            "message_id": "MSG-1001",
+            **tool_call.arguments,
+        }
+
+    if tool_call.name == "delete_record":
+        return {
+            "status": "deleted",
+            **tool_call.arguments,
+        }
+
+    raise ValueError(f"Unknown tool: {tool_call.name}")
