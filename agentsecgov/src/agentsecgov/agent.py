@@ -2,12 +2,14 @@ from uuid import uuid4
 from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal
 from .policy import PolicyEngine
 from .tools import execute_tool
+from .approvals import ApprovalStore
 
 
 class GovernedAgent:
     def __init__(self) -> None:
         self.planner = DeterministicPlanner()
         self.policy_engine = PolicyEngine()
+        self.approval_store = ApprovalStore()
 
     def run(self, request: AgentRequest, principal: Principal) -> AgentResponse:
         tool_call = self.planner.propose(request)
@@ -33,11 +35,21 @@ class GovernedAgent:
             )
 
         if decision.decision == "review":
-            return AgentResponse(
-                request_id=str(uuid4()),
-                status="pending_review",
-                message=f"Action requires review: {decision.reason}",
+            _request_id = str(uuid4())
+
+            review = self.approval_store.create(
+                request_id=_request_id,
+                principal=principal,
+                tool_call=tool_call,
+                reason=decision.reason,
             )
+
+            return AgentResponse(
+                request_id=_request_id,
+                status="pending_review",
+                message=f"Action denied: {decision.reason}",
+            )
+
 
         result = execute_tool(tool_call)
 

@@ -54,3 +54,14 @@ class Principal(BaseModel):
 
     def has_scope(self, scope: str) -> bool:
         return scope in self.scopes
+
+
+class PendingReview(BaseModel):
+    review_id: str
+    request_id: str
+    requester_id: str
+    tenant_id: str
+    tool_call: ToolCall
+    policy_reason: str
+    risk: str
+    status: str = "pending"
