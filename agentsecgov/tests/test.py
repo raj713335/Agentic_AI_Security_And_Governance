@@ -117,3 +117,15 @@ class TestAgent(unittest.TestCase):
 
         assert response.status_code == 200
         assert response.json()["status"] == "denied"
+
+
+    def test_pii_is_redacted_before_agent_response(self) -> None:
+        response = self.client.post(
+            "/agent/run",
+            json={"message": "Create ticket for alice@example.com on ACCT-123456"},
+            headers={"X-API-Key": "learner-key"},
+        )
+
+        assert response.status_code == 200
+        assert "alice@example.com" not in str(response.json())
+        assert "ACCT-123456" not in str(response.json())

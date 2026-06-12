@@ -3,6 +3,7 @@ from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal
 from .policy import PolicyEngine
 from .tools import execute_tool
 from .approvals import ApprovalStore
+from .pii import PiiRedactor
 
 
 class GovernedAgent:
@@ -49,7 +50,6 @@ class GovernedAgent:
                 status="pending_review",
                 message=f"Action denied: {decision.reason}",
             )
-
 
         result = execute_tool(tool_call)
 
@@ -124,6 +124,7 @@ class DeterministicAgent:
         """
 
         text = request.message.lower()
+        text = PiiRedactor.redact(text)
 
         if "delete" in text or "login" in text:
             status = "planned"
