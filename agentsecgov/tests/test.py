@@ -78,22 +78,22 @@ class TestAgent(unittest.TestCase):
         assert allowed is False
         assert "does not match" in reason
 
-    # def test_learner_can_create_ticket(self) -> None:
-    #     response = self.client.post(
-    #         "/agent/run",
-    #         json={"message": "Create a ticket for login issue"},
-    #         headers={"X-API-Key": "learner-key"},
-    #     )
-    #
-    #     assert response.status_code == 200
-    #     assert response.json()["status"] == "executed"
-    #
-    # def test_learner_cannot_delete_record(self) -> None:
-    #     response = self.client.post(
-    #         "/agent/run",
-    #         json={"message": "Delete record CUST-1001"},
-    #         headers={"X-API-Key": "learner-key"},
-    #     )
-    #
-    #     assert response.status_code == 200
-    #     assert response.json()["status"] == "denied"
+    def test_learner_can_create_ticket(self) -> None:
+        response = self.client.post(
+            "/agent/run",
+            json={"message": "Create a ticket for login issue"},
+            headers={"X-API-Key": "learner-key"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "executed"
+
+    def test_learner_cannot_delete_record(self) -> None:
+        response = self.client.post(
+            "/agent/run",
+            json={"message": "Delete record CUST-1001"},
+            headers={"X-API-Key": "learner-key"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "denied"

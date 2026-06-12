@@ -32,12 +32,13 @@ class ToolSpec(BaseModel):
     description: str = Field(description="description of the tool's functionality")
     risk: RiskLevel = Field(description="risk level associated with using this tool")
     required_scope: str | None = Field(default=None, description="required scope for using this tool, if any")
+    requires_review: bool = Field(default=False, description="whether this tool call requires human review")
     side_effect: str | None = False
     business_needs_pii: bool = False
 
 
 class ToolCall(BaseModel):
-    tool_name: str = Field(description="name of the tool being called")
+    name: str = Field(description="name of the tool being called")
     arguments: dict[str, Any] = Field(description="arguments for the tool call")
     risk: RiskLevel = Field(description="risk level of this tool call")
 
