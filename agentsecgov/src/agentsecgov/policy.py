@@ -4,6 +4,12 @@ from .security_signals import detect_prompt_injection
 from .tools import get_tool_spec
 
 
+def unsafe_memory_write(text: str) -> bool:
+    risky_terms = ["ignore", "override", "policy", "admin", "credential", "secret", "bypass"]
+    lowered = text.lower()
+    return any(term in lowered for term in risky_terms)
+
+
 class PolicyDecision:
     def __init__(
         self,
@@ -36,6 +42,16 @@ class PolicyEngine:
                 reason="unknown tool is not allowed",
                 risk=tool_call.risk.value,
             )
+
+        if tool_call.name == "memory_write":
+            text = str(tool_call.arguments.get("text", ""))
+
+            if unsafe_memory_write(text):
+                return PolicyDecision(
+                    decision="deny",
+                    reason="memory write attempts to persist unsafe instruction",
+                    risk=spec.risk.value,
+                )
 
         if tool_call.name in self.disabled_tools:
             return PolicyDecision(

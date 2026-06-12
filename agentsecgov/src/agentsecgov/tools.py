@@ -41,6 +41,14 @@ TOOL_SPECS: dict[str, ToolSpec] = {
         side_effect="financial_transfer",
         requires_review=True,
     ),
+    "memory_write": ToolSpec(
+        name="memory_write",
+        description="Store a user preference or task state.",
+        risk=RiskLevel.MEDIUM,
+        required_scope="docs:search",
+        side_effect="persistent_memory",
+        requires_review=False,
+    )
 }
 
 

@@ -64,6 +64,17 @@ class DeterministicPlanner:
     def propose(self, request: AgentRequest) -> ToolCall | None:
         text = request.message.lower()
 
+        if "remember" in text:
+            return ToolCall(
+                name="memory_write",
+                risk=RiskLevel.MEDIUM,
+                arguments={
+                    "category": "preference",
+                    "text": request.message,
+                    "tenant_id": request.tenant_id,
+                },
+            )
+
         if "delete" in text:
             return ToolCall(
                 name="delete_record",
