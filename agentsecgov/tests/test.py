@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from ..src.agentsecgov.main import app
+from ..src.agentsecgov.goal import goal_integrity_check
 
 client = TestClient(app)
 
@@ -52,5 +53,15 @@ def test_valid_api_key_allows_request() -> None:
     )
 
     assert response.status_code == 200
+
+
+def test_goal_integrity_blocks_login_to_delete() -> None:
+    allowed, reason = goal_integrity_check(
+        "Help me with a login issue",
+        "delete_record",
+    )
+
+    assert allowed is False
+    assert "does not match" in reason
 
 
