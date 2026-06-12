@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 
 from .models import AgentRequest, AgentResponse, Principal
-from .agent import DeterministicAgent
+from .agent import DeterministicAgent, GovernedAgent
 from .auth import get_current_principal
 
 app = FastAPI(
@@ -10,7 +10,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-AGENT = DeterministicAgent()
+AGENT = GovernedAgent()
 
 
 @app.get("/health")

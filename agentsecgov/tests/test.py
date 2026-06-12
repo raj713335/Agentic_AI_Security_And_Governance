@@ -17,7 +17,6 @@ class TestAgent(unittest.TestCase):
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
 
-
     # def test_run_agent():
     #     payload = {
     #         "message": "Hello, AgentSecGov!",
@@ -41,7 +40,6 @@ class TestAgent(unittest.TestCase):
     #     assert data["status"] == "planned"
     #     assert "Agent plans to create a support ticket" in data["message"]
 
-
     def test_agent_requires_api_key(self) -> None:
         response = self.client.post(
             "/agent/run",
@@ -49,7 +47,6 @@ class TestAgent(unittest.TestCase):
         )
 
         assert response.status_code == 401
-
 
     def test_valid_api_key_allows_request(self) -> None:
         response = self.client.post(
@@ -80,3 +77,23 @@ class TestAgent(unittest.TestCase):
 
         assert allowed is False
         assert "does not match" in reason
+
+    # def test_learner_can_create_ticket(self) -> None:
+    #     response = self.client.post(
+    #         "/agent/run",
+    #         json={"message": "Create a ticket for login issue"},
+    #         headers={"X-API-Key": "learner-key"},
+    #     )
+    #
+    #     assert response.status_code == 200
+    #     assert response.json()["status"] == "executed"
+    #
+    # def test_learner_cannot_delete_record(self) -> None:
+    #     response = self.client.post(
+    #         "/agent/run",
+    #         json={"message": "Delete record CUST-1001"},
+    #         headers={"X-API-Key": "learner-key"},
+    #     )
+    #
+    #     assert response.status_code == 200
+    #     assert response.json()["status"] == "denied"

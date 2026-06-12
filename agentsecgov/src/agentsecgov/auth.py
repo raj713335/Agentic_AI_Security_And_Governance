@@ -2,7 +2,6 @@ from fastapi import Header, HTTPException
 
 from .models import Principal
 
-
 API_KEYS = {
     "learner-key": Principal(
         user_id="learner-001",
@@ -32,7 +31,7 @@ API_KEYS = {
 
 
 def get_current_principal(
-    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+        x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ) -> Principal:
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing X-API-Key header")

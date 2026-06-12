@@ -1,5 +1,51 @@
 from uuid import uuid4
 from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal
+from .policy import PolicyEngine
+from .tools import execute_tool
+
+
+class GovernedAgent:
+    def __init__(self) -> None:
+        self.planner = DeterministicPlanner()
+        self.policy_engine = PolicyEngine()
+
+    def run(self, request: AgentRequest, principal: Principal) -> AgentResponse:
+        tool_call = self.planner.propose(request)
+
+        if tool_call is None:
+            return AgentResponse(
+                request_id=str(uuid4()),
+                status="no_action",
+                message="No tool action needed.",
+            )
+
+        decision = self.policy_engine.evaluate(
+            principal=principal,
+            tool_call=tool_call,
+            original_message=request.message,
+        )
+
+        if decision.decision == "deny":
+            return AgentResponse(
+                request_id=str(uuid4()),
+                status="denied",
+                message=f"Action denied: {decision.reason}",
+            )
+
+        if decision.decision == "review":
+            return AgentResponse(
+                request_id=str(uuid4()),
+                status="pending_review",
+                message=f"Action requires review: {decision.reason}",
+            )
+
+        result = execute_tool(tool_call)
+
+        return AgentResponse(
+            request_id=str(uuid4()),
+            status="executed",
+            message=f"Action executed: {result['status']}",
+        )
 
 
 class DeterministicPlanner:

@@ -49,6 +49,7 @@ class Principal(BaseModel):
     scopes: set[str]
     department: str = "support"
     environment: str = "local"
+    agent_id: str = "support-agent"
 
     def has_scope(self, scope: str) -> bool:
         return scope in self.scopes
