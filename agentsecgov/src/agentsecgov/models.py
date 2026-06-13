@@ -16,6 +16,7 @@ class AgentResponse(BaseModel):
     Model for outgoing agent responses.
     """
     request_id: str = Field(description="unique identifier for the request")
+    review_id: str | None = Field(default=None, description="associated review ID if this response is pending human review")
     status: str = Field(description="status of the agent's response, e.g., 'success' or 'error'")
     message: str = Field(description="the agent's response message")
 

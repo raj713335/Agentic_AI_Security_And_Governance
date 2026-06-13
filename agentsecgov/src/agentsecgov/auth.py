@@ -1,4 +1,4 @@
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, status
 
 from .models import Principal
 
@@ -42,3 +42,11 @@ def get_current_principal(
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     return principal
+
+
+def require_scope(principal: Principal, scope: str) -> None:
+    if not principal.has_scope(scope):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Required scope missing: {scope}",
+        )

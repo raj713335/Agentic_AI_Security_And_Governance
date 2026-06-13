@@ -2,15 +2,15 @@ from uuid import uuid4
 from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal
 from .policy import PolicyEngine
 from .tools import execute_tool
-from .approvals import ApprovalStore
+from .approvals import ApprovalStore, APPROVAL_STORE
 from .pii import PiiRedactor
 
 
 class GovernedAgent:
-    def __init__(self) -> None:
+    def __init__(self, approval_store: ApprovalStore,) -> None:
         self.planner = DeterministicPlanner()
         self.policy_engine = PolicyEngine()
-        self.approval_store = ApprovalStore()
+        self.approval_store = APPROVAL_STORE
 
     def run(self, request: AgentRequest, principal: Principal) -> AgentResponse:
         tool_call = self.planner.propose(request)
@@ -37,9 +37,11 @@ class GovernedAgent:
 
         if decision.decision == "review":
             _request_id = str(uuid4())
+            _review_id = str(uuid4())
 
             review = self.approval_store.create(
                 request_id=_request_id,
+                review_id=_review_id,
                 principal=principal,
                 tool_call=tool_call,
                 reason=decision.reason,
@@ -47,6 +49,7 @@ class GovernedAgent:
 
             return AgentResponse(
                 request_id=_request_id,
+                review_id=_review_id,
                 status="pending_review",
                 message=f"Action denied: {decision.reason}",
             )

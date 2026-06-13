@@ -10,12 +10,13 @@ class ApprovalStore:
     def create(
         self,
         request_id: str,
+        review_id: str,
         principal: Principal,
         tool_call: ToolCall,
         reason: str,
     ) -> PendingReview:
         review = PendingReview(
-            review_id=str(uuid4()),
+            review_id=review_id,
             request_id=request_id,
             requester_id=principal.user_id,
             tenant_id=principal.tenant_id,
@@ -28,7 +29,14 @@ class ApprovalStore:
         return review
 
     def list_pending(self) -> list[PendingReview]:
-        return [review for review in self._reviews.values() if review.status == "pending"]
+        return [review for review in self._reviews.values() if review.status == "pending_review"]
 
     def get(self, review_id: str) -> PendingReview | None:
         return self._reviews.get(review_id)
+
+
+APPROVAL_STORE = ApprovalStore()
+
+
+def get_approval_store() -> ApprovalStore:
+    return APPROVAL_STORE

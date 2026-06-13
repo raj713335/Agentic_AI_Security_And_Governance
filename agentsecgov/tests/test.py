@@ -141,8 +141,28 @@ class TestAgent(unittest.TestCase):
         assert response.json()["status"] == "denied"
 
     def test_unreviewed_mcp_tool_is_denied(self) -> None:
-
         result = review_mcp_tool("unknown-server", "run_shell")
 
         assert result.approved is False
         assert result.risk == "critical"
+
+    def test_reviewer_can_approve_pending_delete(self) -> None:
+        response = self.client.post(
+            "/agent/run",
+            json={"message": "Delete record CUST-1001"},
+            headers={"X-API-Key": "admin-key"},
+        )
+
+        review_id = response.json()["review_id"]
+
+        approval = self.client.post(
+            f"/reviews/{review_id}/decision",
+            json={
+                "decision": "approve",
+                "justification": "Duplicate record confirmed",
+            },
+            headers={"X-API-Key": "reviewer-key"},
+        )
+
+        assert approval.status_code == 200
+        assert approval.json()["status"] == "executed"
