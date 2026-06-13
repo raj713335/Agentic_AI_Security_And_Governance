@@ -1,67 +1,93 @@
+from __future__ import annotations
+
+import re
 from uuid import uuid4
-from .models import AgentResponse, AgentRequest, RiskLevel, ToolCall, Principal, AuditEvent, AgentStatus, PendingReview, Decision
+
+from .approvals import ApprovalStore
+from .audit import AuditLogger, redaction_counts
+from .models import (
+    AgentRequest,
+    AgentResponse,
+    AgentStatus,
+    AuditEvent,
+    Decision,
+    PendingReview,
+    Principal,
+    RiskLevel,
+    ToolCall,
+)
+from .pii import PiiRedactor
 from .policy import PolicyEngine
 from .tools import execute_tool
-from .approvals import ApprovalStore
-from .pii import PiiRedactor
-from .audit import AuditLogger, redaction_counts
 
 
 class DeterministicPlanner:
-    def propose(self, request: AgentRequest) -> ToolCall | None:
-        text = request.message.lower()
+    """A predictable planner used so learners can test governance controls.
 
-        if "remember" in text:
+    Replace this class with a real LangChain/LangGraph planner in advanced labs.
+    The security gate should remain unchanged.
+    """
+
+    def propose(self, safe_message: str, tenant_id: str) -> ToolCall | None:
+        text = safe_message.lower()
+
+        if "wire" in text or "transfer funds" in text or "send money" in text:
             return ToolCall(
-                name="memory_write",
-                risk=RiskLevel.MEDIUM,
-                arguments={
-                    "category": "preference",
-                    "text": request.message,
-                    "tenant_id": request.tenant_id,
-                },
+                name="wire_funds",
+                risk=RiskLevel.critical,
+                arguments={"payee": "example-payee", "amount": 1000.0, "reason": safe_message[:200]},
             )
 
-        if "delete" in text:
+        if "delete" in text or "remove record" in text:
+            match = re.search(r"\b(?:cust|rec|acct)-[a-z0-9-]+\b", safe_message, flags=re.IGNORECASE)
+            record_id = match.group(0).upper() if match else "CUST-UNKNOWN"
             return ToolCall(
                 name="delete_record",
-                risk=RiskLevel.HIGH,
-                arguments={
-                    "record_id": "CUST-1001",
-                    "reason": request.message,
-                    "tenant_id": request.tenant_id,
-                },
+                risk=RiskLevel.high,
+                arguments={"record_id": record_id, "reason": safe_message[:250], "tenant_id": tenant_id},
             )
 
-        if "email" in text:
+        # Redacted email addresses appear as [EMAIL], so only route to the email tool
+        # when the user asks to send an email, not merely when a text contains an address.
+        if "send email" in text or "send customer email" in text or "email customer" in text:
             return ToolCall(
                 name="send_customer_email",
-                risk=RiskLevel.HIGH,
+                risk=RiskLevel.high,
                 arguments={
                     "customer_id": "CUST-1001",
                     "subject": "Support follow-up",
-                    "body": request.message,
-                    "tenant_id": request.tenant_id,
+                    "body": safe_message[:1000],
+                    "tenant_id": tenant_id,
                 },
             )
 
-        if "ticket" in text or "login" in text:
+        if "remember" in text or "store memory" in text:
+            category = "preference"
+            if any(word in text for word in ["policy", "ignore", "override", "admin", "secret"]):
+                category = "instruction"
             return ToolCall(
-                name="create_ticket",
-                risk=RiskLevel.MEDIUM,
-                arguments={
-                    "title": "Support request",
-                    "description": request.message,
-                    "severity": "medium",
-                    "tenant_id": request.tenant_id,
-                },
+                name="memory_write",
+                risk=RiskLevel.medium,
+                arguments={"category": category, "text": safe_message[:500], "tenant_id": tenant_id},
             )
 
-        if "search" in text or "docs" in text:
+        if "search" in text or "lookup" in text or "docs" in text:
             return ToolCall(
                 name="search_public_docs",
-                risk=RiskLevel.LOW,
-                arguments={"query": request.message},
+                risk=RiskLevel.low,
+                arguments={"query": safe_message[:500]},
+            )
+
+        if "ticket" in text or "issue" in text or "login" in text or "support" in text:
+            return ToolCall(
+                name="create_ticket",
+                risk=RiskLevel.medium,
+                arguments={
+                    "title": "Support request",
+                    "description": safe_message[:1000],
+                    "severity": "medium",
+                    "tenant_id": tenant_id,
+                },
             )
 
         return None
@@ -117,6 +143,7 @@ class GovernedAgent:
         )
 
         tool_call = self.planner.propose(redaction.text, request.tenant_id)
+
         if tool_call is None:
             self.audit_logger.record(
                 AuditEvent(
@@ -255,38 +282,11 @@ class GovernedAgent:
             risk_summary=f"{policy_decision.risk.value} risk; executed within policy.",
         )
 
-
-class DeterministicAgent:
-    """
-    A simple deterministic agent that processes incoming requests and generates responses.
-    """
-
-    def run(self, request: AgentRequest, principal: Principal) -> AgentResponse:
-        """
-        Process the incoming request and generate a response.
-
-        Args:
-            request (AgentRequest): The incoming request from the user.
-            :param principal:
-            :param request:
-        """
-
-        text = request.message.lower()
-        text = PiiRedactor.redact(text)
-
-        if "delete" in text or "login" in text:
-            status = "planned"
-            message = "Agent plans to create a support ticket for the issue."
-        elif "delete" in text or "remove" in text:
-            status = "no_action"
-            message = "Agent cannot perform delete operations due to security policies."
-        else:
-            # For general conversational inputs, we return a success acknowledgement
-            status = "success"
-            message = "Agent received your message and will respond appropriately."
-
-        return AgentResponse(
-            request_id=str(uuid4()),
-            status=status,
-            message=message
-        )
+    def _safe_args_preview(self, args: dict[str, object]) -> dict[str, object]:
+        preview: dict[str, object] = {}
+        for key, value in args.items():
+            if key in {"body", "description", "reason", "text", "query"}:
+                preview[key] = str(value)[:120]
+            else:
+                preview[key] = value
+        return preview

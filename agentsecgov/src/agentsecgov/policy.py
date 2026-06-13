@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from time import perf_counter
 
-from .models import Decision, PolicyDecision, Principal, RedactionFinding, RiskLevel, ToolCall, ToolSpec
+from .models import Decision, PolicyDecision, Principal, RedactionFinding, RiskLevel, ToolCall
 from .tools import get_tool_spec
 
 POLICY_VERSION = "local-python-policy-v1"
