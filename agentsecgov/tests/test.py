@@ -2,7 +2,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from ..src.agentsecgov.main import app
+from ..src.agentsecgov.main import app, APPROVAL_STORE, AUDIT_LOGGER
 from ..src.agentsecgov.goal import goal_integrity_check
 from ..src.agentsecgov.security_signals import detect_prompt_injection
 from ..src.agentsecgov.mcp_review import review_mcp_tool
@@ -12,6 +12,8 @@ class TestAgent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
+        AUDIT_LOGGER.clear()
+        APPROVAL_STORE.clear()
 
     def test_health_check(self):
         response = self.client.get("/health")
@@ -166,3 +168,18 @@ class TestAgent(unittest.TestCase):
 
         assert approval.status_code == 200
         assert approval.json()["status"] == "executed"
+
+    def test_audit_events_created(self) -> None:
+        self.client.post(
+            "/agent/run",
+            json={"message": "Create ticket for login issue"},
+            headers={"X-API-Key": "learner-key"},
+        )
+
+        response = self.client.get(
+            "/audit/events",
+            headers={"X-API-Key": "learner-key"},
+        )
+
+        assert response.status_code == 200
+        assert len(response.json()) > 0

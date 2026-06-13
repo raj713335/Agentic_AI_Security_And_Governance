@@ -3,8 +3,10 @@ from fastapi import FastAPI, Depends, HTTPException
 from .models import AgentRequest, AgentResponse, Principal, ReviewDecisionRequest
 from .agent import GovernedAgent
 from .auth import get_current_principal, require_scope
-from .approvals import ApprovalStore, APPROVAL_STORE
+from .approvals import ApprovalStore
 from .tools import TOOL_SPECS, execute_tool, ToolCall
+from .audit import AuditLogger
+from .policy import PolicyEngine
 
 app = FastAPI(
     title="AgentSecGov API",
@@ -12,7 +14,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
-AGENT = GovernedAgent(approval_store=APPROVAL_STORE)
+AUDIT_LOGGER = AuditLogger()
+APPROVAL_STORE = ApprovalStore()
+POLICY_ENGINE = PolicyEngine()
+AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE)
 
 
 @app.get("/health")
@@ -105,3 +110,10 @@ def decide_review(
         }
 
     raise HTTPException(status_code=400, detail="Unsupported decision")
+
+
+@app.get("/audit/events")
+def audit_events(
+        principal: Principal = Depends(get_current_principal),
+):
+    return AUDIT_LOGGER.list_events()
