@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from ..src.agentsecgov.main import app
 from ..src.agentsecgov.goal import goal_integrity_check
 from ..src.agentsecgov.security_signals import detect_prompt_injection
+from ..src.agentsecgov.mcp_review import review_mcp_tool
 
 
 class TestAgent(unittest.TestCase):
@@ -139,3 +140,9 @@ class TestAgent(unittest.TestCase):
         assert response.status_code == 200
         assert response.json()["status"] == "denied"
 
+    def test_unreviewed_mcp_tool_is_denied(self) -> None:
+
+        result = review_mcp_tool("unknown-server", "run_shell")
+
+        assert result.approved is False
+        assert result.risk == "critical"

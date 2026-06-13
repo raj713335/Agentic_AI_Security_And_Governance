@@ -131,6 +131,7 @@ class DeterministicAgent:
 
         Args:
             request (AgentRequest): The incoming request from the user.
+            :param principal:
             :param request:
         """
 

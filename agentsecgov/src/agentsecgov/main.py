@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 
 from .models import AgentRequest, AgentResponse, Principal
-from .agent import DeterministicAgent, GovernedAgent
+from .agent import GovernedAgent
 from .auth import get_current_principal
 
 app = FastAPI(
