@@ -4,7 +4,7 @@ from .models import AgentRequest, AgentResponse, Principal, ReviewDecisionReques
 from .agent import GovernedAgent
 from .auth import get_current_principal, require_scope
 from .approvals import ApprovalStore, APPROVAL_STORE
-from .tools import TOOL_SPECS, execute_tool
+from .tools import TOOL_SPECS, execute_tool, ToolCall
 
 app = FastAPI(
     title="AgentSecGov API",
@@ -49,6 +49,31 @@ def decide_review(
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found")
 
+    if decision_request.decision == "edit":
+        if not decision_request.edit_args:
+            raise HTTPException(status_code=422, detail="edit_args required")
+
+        final_args = {
+            **review.tool_call.arguments,
+            **decision_request.edit_args,
+        }
+
+        edited_tool_call = ToolCall(
+            name=review.tool_call.name,
+            risk=review.tool_call.risk,
+            arguments=final_args,
+        )
+
+        result = execute_tool(edited_tool_call)
+        review.status = "edited_and_approved"
+
+        return {
+            "status": "executed",
+            "message": "Edited action executed after human review",
+            "review_id": review.review_id,
+            "result": result,
+        }
+
     if decision_request.decision == "reject":
         review.status = "rejected"
         return {
@@ -65,6 +90,18 @@ def decide_review(
             "message": "Action executed after human review",
             "review_id": review.review_id,
             "result": result,
+        }
+
+    if decision_request.decision == "respond":
+        if not decision_request.response:
+            raise HTTPException(status_code=422, detail="response required")
+
+        review.status = "responded"
+
+        return {
+            "status": "responded",
+            "message": decision_request.response,
+            "review_id": review.review_id,
         }
 
     raise HTTPException(status_code=400, detail="Unsupported decision")
