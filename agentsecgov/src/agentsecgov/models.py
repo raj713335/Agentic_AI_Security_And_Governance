@@ -65,3 +65,10 @@ class PendingReview(BaseModel):
     policy_reason: str
     risk: str
     status: str = "pending"
+
+
+class ReviewDecisionRequest(BaseModel):
+    decision: str
+    justification: str
+    edit_args: dict | None = None
+    response: str | None = None
