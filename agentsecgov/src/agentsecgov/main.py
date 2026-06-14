@@ -21,6 +21,8 @@ from .models import (
 )
 from .policy import PolicyEngine
 from .tools import TOOL_SPECS, execute_tool
+from .monitoring import detect_anomalies
+from .kill_switch import disable_tool
 
 APP_VERSION = "0.1.0"
 
@@ -240,3 +242,20 @@ def audit_events(principal: Principal = Depends(get_current_principal)) -> list[
     # In this lab, any authenticated user can inspect audit events for learning.
     # Production systems should enforce auditor roles and tenant filters.
     return AUDIT_LOGGER.list_events()
+
+
+@app.get("/monitoring/alerts")
+def monitoring_alerts(
+        principal: Principal = Depends(get_current_principal),
+):
+    return detect_anomalies(AUDIT_LOGGER.list_events())
+
+
+@app.post("/admin/kill-switch/tools/{tool_name}/disable")
+def disable_tool_endpoint(
+        tool_name: str,
+        principal: Principal = Depends(get_current_principal),
+):
+    require_scope(principal, "review:decide")
+    disable_tool(tool_name)
+    return {"status": "disabled", "tool": tool_name}

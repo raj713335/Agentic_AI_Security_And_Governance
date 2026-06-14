@@ -5,6 +5,7 @@ from time import perf_counter
 
 from .models import Decision, PolicyDecision, Principal, RedactionFinding, RiskLevel, ToolCall
 from .tools import get_tool_spec
+from .kill_switch import is_tool_disabled
 
 POLICY_VERSION = "local-python-policy-v1"
 
@@ -158,6 +159,13 @@ class PolicyEngine:
                 policy_version=POLICY_VERSION,
             )
 
+        if is_tool_disabled(tool_call.name):
+            return PolicyDecision(
+                decision="deny",
+                reason="tool disabled by kill switch",
+                risk=spec.risk.value,
+            )
+
         return PolicyDecision(
             decision=Decision.allow,
             reason="principal has required scope and tool risk is within autonomy budget",
@@ -165,3 +173,5 @@ class PolicyEngine:
             requires_review=False,
             policy_version=POLICY_VERSION,
         )
+
+

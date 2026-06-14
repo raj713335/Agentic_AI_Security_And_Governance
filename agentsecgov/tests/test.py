@@ -6,6 +6,7 @@ from ..src.agentsecgov.main import app
 from ..src.agentsecgov.goal import goal_integrity_check
 from ..src.agentsecgov.security_signals import detect_prompt_injection
 from ..src.agentsecgov.mcp_review import review_mcp_tool
+from ..src.agentsecgov.kill_switch import disable_tool, enable_tool
 
 
 class TestAgent(unittest.TestCase):
@@ -179,9 +180,18 @@ class TestAgent(unittest.TestCase):
             headers={"X-API-Key": "learner-key"},
         )
 
-        print(response.json())
-
         assert response.status_code == 200
         assert len(response.json()) > 0
 
+    def test_kill_switch_blocks_tool(self) -> None:
+        disable_tool("delete_record")
 
+        response = self.client.post(
+            "/agent/run",
+            json={"message": "Delete record CUST-1001"},
+            headers={"X-API-Key": "admin-key"},
+        )
+
+        assert response.json()["status"] == "pending_review"
+
+        enable_tool("delete_record")
