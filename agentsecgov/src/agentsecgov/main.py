@@ -259,3 +259,24 @@ def disable_tool_endpoint(
     require_scope(principal, "review:decide")
     disable_tool(tool_name)
     return {"status": "disabled", "tool": tool_name}
+
+
+@app.get("/governance/system-card")
+def system_card(
+    principal: Principal = Depends(get_current_principal),
+):
+    return {
+        "system_name": "Support Operations Agent",
+        "purpose": "Governed agentic support automation",
+        "controls": [
+            "authentication",
+            "least privilege",
+            "policy gate",
+            "human review",
+            "PII redaction",
+            "audit logging",
+            "anomaly detection",
+            "kill switch",
+        ],
+        "tools": list(TOOL_SPECS.keys()),
+    }

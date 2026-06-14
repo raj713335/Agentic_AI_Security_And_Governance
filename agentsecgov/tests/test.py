@@ -7,6 +7,7 @@ from ..src.agentsecgov.goal import goal_integrity_check
 from ..src.agentsecgov.security_signals import detect_prompt_injection
 from ..src.agentsecgov.mcp_review import review_mcp_tool
 from ..src.agentsecgov.kill_switch import disable_tool, enable_tool
+from ..src.agentsecgov.multi_agent import AgentMessage, validate_agent_message
 
 
 class TestAgent(unittest.TestCase):
@@ -195,3 +196,20 @@ class TestAgent(unittest.TestCase):
         assert response.json()["status"] == "pending_review"
 
         enable_tool("delete_record")
+
+    def test_unsigned_agent_message_denied(self) -> None:
+        message = AgentMessage(
+            from_agent="support-agent",
+            to_agent="billing-agent",
+            tenant_id="tenant-a",
+            requested_action="search_public_docs",
+            signed=False,
+            correlation_id="corr-1",
+        )
+
+        allowed, reason = validate_agent_message(message)
+
+        assert allowed is False
+        assert "unsigned" in reason
+
+
