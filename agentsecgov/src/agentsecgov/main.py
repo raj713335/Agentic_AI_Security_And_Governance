@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import Depends, FastAPI, HTTPException, status
 
-from .agent import GovernedAgent
+from .agent import GovernedAgent, DeterministicPlanner, LANGCHAIN_AVAILABLE
+
+if LANGCHAIN_AVAILABLE:
+    from .agent import LangChainPlanner
+
 from .approvals import ApprovalStore
 from .audit import AuditLogger, redaction_counts
 from .auth import get_current_principal, require_scope
@@ -35,7 +44,14 @@ app = FastAPI(
 AUDIT_LOGGER = AuditLogger()
 APPROVAL_STORE = ApprovalStore()
 POLICY_ENGINE = PolicyEngine()
-AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE)
+
+if LANGCHAIN_AVAILABLE and os.getenv("OPENAI_API_KEY"):
+    model_name = os.getenv("OPENAI_MODEL_NAME", "gpt-4o")
+    planner = LangChainPlanner(model_name=model_name)
+else:
+    planner = DeterministicPlanner()
+
+AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE, planner=planner)
 
 
 @app.get("/health")
@@ -263,7 +279,7 @@ def disable_tool_endpoint(
 
 @app.get("/governance/system-card")
 def system_card(
-    principal: Principal = Depends(get_current_principal),
+        principal: Principal = Depends(get_current_principal),
 ):
     return {
         "system_name": "Support Operations Agent",
