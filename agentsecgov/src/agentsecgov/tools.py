@@ -152,6 +152,8 @@ def get_tool_spec(tool_name: str) -> ToolSpec | None:
 
 def execute_tool(tool_call: ToolCall) -> dict[str, Any]:
     executor = TOOL_EXECUTORS.get(tool_call.name)
+    if hasattr(executor, "invoke"):
+        return executor.invoke(tool_call.arguments)
     if executor is None:
         raise ValueError(f"Unknown tool: {tool_call.name}")
     return executor(**tool_call.arguments)

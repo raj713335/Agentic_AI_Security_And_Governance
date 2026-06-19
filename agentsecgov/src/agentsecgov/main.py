@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from fastapi import Depends, FastAPI, HTTPException, status
 
-from .agent import GovernedAgent
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from .approvals import ApprovalStore
 from .audit import AuditLogger, redaction_counts
 from .auth import get_current_principal, require_scope
@@ -24,6 +28,11 @@ from .tools import TOOL_SPECS, execute_tool
 from .monitoring import detect_anomalies
 from .kill_switch import disable_tool
 
+from .agent import GovernedAgent, DeterministicPlanner, LANGCHAIN_AVAILABLE
+
+if LANGCHAIN_AVAILABLE:
+    from .agent import LangChainPlanner
+
 APP_VERSION = "0.1.0"
 
 app = FastAPI(
@@ -35,7 +44,15 @@ app = FastAPI(
 AUDIT_LOGGER = AuditLogger()
 APPROVAL_STORE = ApprovalStore()
 POLICY_ENGINE = PolicyEngine()
-AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE)
+
+if LANGCHAIN_AVAILABLE and os.getenv("OPENAI_API_KEY"):
+    model_name = os.getenv("OPENAI_MODEL_NAME", "gpt-4o")
+    planner = LangChainPlanner(model_name=model_name)
+else:
+    planner = DeterministicPlanner()
+
+AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE, planner=planner)
+#AGENT = GovernedAgent(AUDIT_LOGGER, APPROVAL_STORE, POLICY_ENGINE)
 
 
 @app.get("/health")
