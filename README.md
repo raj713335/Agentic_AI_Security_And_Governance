@@ -1,4 +1,16 @@
-# Agentic AI Security and Governance
+<h1 align="center">
+  <a href="https://www.udemy.com/course/agentic-ai-security-governance-build-safe-ai-agents">
+    Agentic AI Security & Governance: Build Safe AI Agents
+  </a>
+</h1>
+
+<p align="center">
+  Secure AI agents with FastAPI, LangChain, policy gates, human review, audit logs, MCP security, and red-team tests
+</p>
+
+<p align="center">
+  <img src="docs/screenshot.png" />
+</p> 
 
 This project is the companion codebase for the **Agentic AI Security and Governance** course. It demonstrates how to securely architect, govern, and monitor autonomous AI agents using a robust defense-in-depth approach.
 
