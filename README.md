@@ -89,6 +89,21 @@ python run.py
 ```
 This will start the FastAPI application on `http://127.0.0.1:8000`.
 
+## Red Team Testing
+
+To validate that the framework's security controls actually work against adversarial threats, this repository includes a dedicated red-team test suite (`agentsecgov/tests/test_red_team.py`). 
+
+The suite tests the agent against the following techniques:
+1. **Prompt Injection**: Attempts to override system instructions and bypass guardrails.
+2. **Unauthorized Tool Use via Social Engineering**: Attempts to masquerade as an authority (e.g., the CEO) to trigger critical tools without the proper cryptographic scope.
+3. **Sensitive Data Leakage**: Attempts to exfiltrate or pass PII (emails, phone numbers) through the LLM.
+4. **Goal Hijacking**: Attempts to embed a destructive secondary payload (e.g., deleting a record) inside a benign primary request.
+
+To run the red-team suite:
+```bash
+python -m unittest agentsecgov/tests/test_red_team.py
+```
+
 ## Course Outline
 
 ### Section 1: Agentic AI Threat Landscape
