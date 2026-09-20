@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://www.udemy.com/course/agentic-ai-security-governance-build-safe-ai-agents">
+  <a href="https://www.udemy.com/course/agentic-ai-security-governance-build-safe-ai-agents/?referralCode=5D7E3AFFC34363181930">
     Agentic AI Security & Governance: Build Safe AI Agents
   </a>
 </h1>
